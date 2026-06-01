@@ -1,0 +1,238 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Second Brain Lite</title>
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <aside class="sidebar" aria-label="Second Brain Lite navigation">
+        <div class="brand">
+          <div class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 32 32" role="img">
+              <path d="M16 3.8c5.4 0 9.8 4.2 9.8 9.5 0 6.9-7.1 12.2-9.1 13.5a1.3 1.3 0 0 1-1.4 0c-2-1.3-9.1-6.6-9.1-13.5C6.2 8 10.6 3.8 16 3.8Z" />
+              <path d="M12.2 13.2h7.6M12.2 17h5.2" />
+            </svg>
+          </div>
+          <div>
+            <p>Second Brain</p>
+            <span>Lite</span>
+          </div>
+        </div>
+
+        <nav class="nav-list" aria-label="Sections">
+          <button class="nav-item active" data-view="dashboard" type="button"><span class="icon" aria-hidden="true">⌂</span>Dashboard</button>
+          <button class="nav-item" data-view="notes" type="button"><span class="icon" aria-hidden="true">✎</span>Notes</button>
+          <button class="nav-item" data-view="reminders" type="button"><span class="icon" aria-hidden="true">◷</span>Reminders</button>
+          <button class="nav-item" data-view="goals" type="button"><span class="icon" aria-hidden="true">◎</span>Goals</button>
+          <button class="nav-item" data-view="expenses" type="button"><span class="icon" aria-hidden="true">$</span>Expenses</button>
+          <button class="nav-item" data-view="calendar" type="button"><span class="icon" aria-hidden="true">□</span>Calendar</button>
+        </nav>
+
+        <div class="sidebar-footer">
+          <span>Saved on this device</span>
+          <button id="resetData" type="button" title="Clear saved app data">Reset</button>
+        </div>
+      </aside>
+
+      <main class="main-content">
+        <header class="topbar">
+          <div>
+            <p id="todayLabel" class="date-label"></p>
+            <h1 id="viewTitle">Dashboard</h1>
+          </div>
+          <div class="topbar-actions">
+            <label class="search-wrap" for="globalSearch">
+              <span aria-hidden="true">⌕</span>
+              <input id="globalSearch" type="search" placeholder="Find anything" autocomplete="off" />
+            </label>
+            <button id="quickCaptureBtn" class="primary-btn" type="button">Quick Capture</button>
+          </div>
+        </header>
+
+        <section id="dashboard" class="view active" aria-label="Dashboard">
+          <div class="hero-band">
+            <div>
+              <p>Today’s focus</p>
+              <h2 id="focusLine">A calm place for the useful stuff.</h2>
+            </div>
+            <button class="ghost-btn" id="generateSummary" type="button">Refresh Summary</button>
+          </div>
+
+          <div class="summary-grid">
+            <article class="metric tile-note"><span>Notes</span><strong id="noteCount">0</strong></article>
+            <article class="metric tile-reminder"><span>Due Soon</span><strong id="dueCount">0</strong></article>
+            <article class="metric tile-goal"><span>Goal Progress</span><strong id="goalScore">0%</strong></article>
+            <article class="metric tile-expense"><span>This Month</span><strong id="monthSpend">$0</strong></article>
+          </div>
+
+          <div class="dashboard-layout">
+            <section class="panel daily-brief">
+              <div class="panel-header">
+                <div>
+                  <span class="eyebrow">AI-style summary</span>
+                  <h2>Daily Brief</h2>
+                </div>
+              </div>
+              <p id="dailyBrief"></p>
+              <div id="briefChips" class="chip-row"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <div><span class="eyebrow">Next up</span><h2>Reminders</h2></div>
+              </div>
+              <div id="upcomingList" class="compact-list"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <div><span class="eyebrow">Keep moving</span><h2>Goals</h2></div>
+              </div>
+              <div id="goalListMini" class="compact-list"></div>
+            </section>
+
+            <section class="panel">
+              <div class="panel-header">
+                <div><span class="eyebrow">Calendar</span><h2>Today</h2></div>
+              </div>
+              <div id="todayEvents" class="compact-list"></div>
+            </section>
+          </div>
+        </section>
+
+        <section id="notes" class="view" aria-label="Notes">
+          <div class="work-grid two-col">
+            <form id="noteForm" class="panel form-panel">
+              <div class="panel-header"><h2>New Note</h2></div>
+              <input id="noteTitle" type="text" placeholder="Title" required />
+              <textarea id="noteBody" rows="8" placeholder="A thought, plan, recipe, idea..." required></textarea>
+              <button class="primary-btn" type="submit">Save Note</button>
+            </form>
+            <div class="panel">
+              <div class="panel-header"><h2>All Notes</h2><span id="notesResultCount" class="count-pill"></span></div>
+              <div id="notesList" class="item-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="reminders" class="view" aria-label="Reminders">
+          <div class="work-grid two-col">
+            <form id="reminderForm" class="panel form-panel">
+              <div class="panel-header"><h2>New Reminder</h2></div>
+              <input id="reminderTitle" type="text" placeholder="What needs doing?" required />
+              <div class="field-row">
+                <input id="reminderDate" type="date" required />
+                <input id="reminderTime" type="time" />
+              </div>
+              <select id="reminderPriority">
+                <option value="Normal">Normal priority</option>
+                <option value="High">High priority</option>
+                <option value="Low">Low priority</option>
+              </select>
+              <button class="primary-btn" type="submit">Add Reminder</button>
+            </form>
+            <div class="panel">
+              <div class="panel-header">
+                <h2>Reminder List</h2>
+                <div class="segmented">
+                  <button class="segment active" data-reminder-filter="open" type="button">Open</button>
+                  <button class="segment" data-reminder-filter="done" type="button">Done</button>
+                </div>
+              </div>
+              <div id="remindersList" class="item-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="goals" class="view" aria-label="Goals">
+          <div class="work-grid two-col">
+            <form id="goalForm" class="panel form-panel">
+              <div class="panel-header"><h2>New Goal</h2></div>
+              <input id="goalTitle" type="text" placeholder="Goal name" required />
+              <textarea id="goalWhy" rows="4" placeholder="Why this matters"></textarea>
+              <label class="range-label" for="goalProgress">Starting progress <span id="goalProgressValue">0%</span></label>
+              <input id="goalProgress" type="range" min="0" max="100" value="0" />
+              <button class="primary-btn" type="submit">Add Goal</button>
+            </form>
+            <div class="panel">
+              <div class="panel-header"><h2>Goal Tracker</h2></div>
+              <div id="goalsList" class="item-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="expenses" class="view" aria-label="Expenses">
+          <div class="work-grid two-col">
+            <form id="expenseForm" class="panel form-panel">
+              <div class="panel-header"><h2>New Expense</h2></div>
+              <input id="expenseName" type="text" placeholder="What was it?" required />
+              <div class="field-row">
+                <input id="expenseAmount" type="number" min="0" step="0.01" placeholder="Amount" required />
+                <input id="expenseDate" type="date" required />
+              </div>
+              <select id="expenseCategory">
+                <option>Food</option>
+                <option>Home</option>
+                <option>Travel</option>
+                <option>Health</option>
+                <option>Fun</option>
+                <option>Other</option>
+              </select>
+              <button class="primary-btn" type="submit">Add Expense</button>
+            </form>
+            <div class="panel">
+              <div class="panel-header"><h2>Spending</h2><span id="expenseTotal" class="count-pill"></span></div>
+              <div id="expenseBars" class="bar-list"></div>
+              <div id="expensesList" class="item-list"></div>
+            </div>
+          </div>
+        </section>
+
+        <section id="calendar" class="view" aria-label="Calendar">
+          <div class="work-grid two-col">
+            <form id="eventForm" class="panel form-panel">
+              <div class="panel-header"><h2>New Event</h2></div>
+              <input id="eventTitle" type="text" placeholder="Event title" required />
+              <div class="field-row">
+                <input id="eventDate" type="date" required />
+                <input id="eventTime" type="time" />
+              </div>
+              <input id="eventPlace" type="text" placeholder="Location or link" />
+              <button class="primary-btn" type="submit">Add Event</button>
+            </form>
+            <div class="panel">
+              <div class="panel-header"><h2>Schedule</h2></div>
+              <div id="calendarList" class="item-list timeline"></div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+
+    <dialog id="quickCaptureDialog">
+      <form id="quickCaptureForm" method="dialog" class="modal-card">
+        <div class="panel-header">
+          <div><span class="eyebrow">Fast inbox</span><h2>Quick Capture</h2></div>
+          <button class="icon-btn" value="cancel" type="submit" aria-label="Close">×</button>
+        </div>
+        <textarea id="quickCaptureText" rows="5" placeholder="Drop anything here. It becomes a note."></textarea>
+        <div class="modal-actions">
+          <button class="ghost-btn" value="cancel" type="submit">Cancel</button>
+          <button class="primary-btn" id="quickCaptureSave" value="default" type="submit">Save</button>
+        </div>
+      </form>
+    </dialog>
+
+    <template id="emptyTemplate">
+      <div class="empty-state">
+        <strong>Nothing here yet</strong>
+        <span>Add something small. Future you will appreciate it.</span>
+      </div>
+    </template>
+
+    <script src="app.js"></script>
+  </body>
+</html>
