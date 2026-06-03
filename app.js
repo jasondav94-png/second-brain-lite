@@ -1,7 +1,7 @@
 const storageKey = "second-brain-lite-v1";
 const todayISO = new Date().toISOString().slice(0, 10);
 const makeId = () => {
-  if (crypto?.randomUUID) return crypto.randomUUID();
+  if (globalThis.crypto?.randomUUID) return crypto.randomUUID();
   return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
 };
 
@@ -57,6 +57,8 @@ let state = loadState();
 let activeView = "dashboard";
 let reminderFilter = "open";
 let searchTerm = "";
+let deferredInstallPrompt = null;
+let toastTimer = null;
 
 const $ = (selector) => document.querySelector(selector);
 const $$ = (selector) => [...document.querySelectorAll(selector)];
@@ -65,11 +67,16 @@ const els = {
   viewTitle: $("#viewTitle"),
   todayLabel: $("#todayLabel"),
   globalSearch: $("#globalSearch"),
+  installApp: $("#installApp"),
   quickCaptureBtn: $("#quickCaptureBtn"),
   quickCaptureDialog: $("#quickCaptureDialog"),
   quickCaptureForm: $("#quickCaptureForm"),
   quickCaptureText: $("#quickCaptureText"),
+  saveStatus: $("#saveStatus"),
+  exportData: $("#exportData"),
+  importData: $("#importData"),
   resetData: $("#resetData"),
+  toast: $("#toast"),
   generateSummary: $("#generateSummary"),
   noteForm: $("#noteForm"),
   noteTitle: $("#noteTitle"),
@@ -127,6 +134,20 @@ function loadState() {
 
 function saveState() {
   localStorage.setItem(storageKey, JSON.stringify(state));
+  updateSaveStatus();
+}
+
+function updateSaveStatus() {
+  if (!els.saveStatus) return;
+  const time = new Date().toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  els.saveStatus.textContent = `Saved ${time}`;
+}
+
+function showToast(message) {
+  els.toast.textContent = message;
+  els.toast.classList.remove("hidden");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => els.toast.classList.add("hidden"), 2600);
 }
 
 function formatDate(value) {
@@ -154,6 +175,16 @@ function daysUntil(value) {
   const start = new Date(`${todayISO}T00:00:00`);
   const end = new Date(`${value}T00:00:00`);
   return Math.round((end - start) / 86400000);
+}
+
+function dueBadge(item) {
+  const delta = daysUntil(item.date);
+  if (Number.isNaN(delta)) return { text: "No date", tone: "" };
+  if (delta < 0) return { text: "Overdue", tone: "warning" };
+  if (delta === 0) return { text: "Today", tone: "good" };
+  if (delta === 1) return { text: "Tomorrow", tone: "good" };
+  if (delta <= 7) return { text: `${delta} days`, tone: "" };
+  return { text: formatDate(item.date), tone: "" };
 }
 
 function matchesSearch(item, fields) {
@@ -205,8 +236,8 @@ function makeItem({ title, meta, body, badges = [], actions = [], done = false }
   badgeWrap.className = "chip-row";
   badges.forEach((badge) => {
     const span = document.createElement("span");
-    span.className = "badge";
-    span.textContent = badge;
+    span.className = `badge ${badge.tone || ""}`.trim();
+    span.textContent = badge.text || badge;
     badgeWrap.append(span);
   });
 
@@ -233,6 +264,7 @@ function deleteById(collection, id) {
   state[collection] = state[collection].filter((item) => item.id !== id);
   saveState();
   render();
+  showToast("Deleted");
 }
 
 function setView(view) {
@@ -278,7 +310,7 @@ function renderDashboard() {
     (item) => makeItem({
       title: item.title,
       meta: `${formatDate(item.date)}${item.time ? ` at ${item.time}` : ""}`,
-      badges: [item.priority],
+      badges: [dueBadge(item), item.priority],
     }),
   );
 
@@ -386,13 +418,14 @@ function renderReminders() {
   els.remindersList.replaceChildren(...reminders.map((reminder) => makeItem({
     title: reminder.title,
     meta: `${formatDate(reminder.date)}${reminder.time ? ` at ${reminder.time}` : ""}`,
-    badges: [reminder.priority],
+    badges: [dueBadge(reminder), reminder.priority],
     done: reminder.done,
     actions: [
       makeButton(reminder.done ? "Reopen" : "Done", "tiny-btn", () => {
         reminder.done = !reminder.done;
         saveState();
         render();
+        showToast(reminder.done ? "Reminder completed" : "Reminder reopened");
       }),
       makeButton("Delete", "tiny-btn danger", () => deleteById("reminders", reminder.id)),
     ],
@@ -525,6 +558,24 @@ function bindEvents() {
     render();
   });
 
+  window.addEventListener("beforeinstallprompt", (event) => {
+    event.preventDefault();
+    deferredInstallPrompt = event;
+    els.installApp.classList.remove("hidden");
+  });
+
+  els.installApp.addEventListener("click", async () => {
+    if (!deferredInstallPrompt) {
+      showToast("Use your browser menu to add this app to your home screen.");
+      return;
+    }
+
+    deferredInstallPrompt.prompt();
+    await deferredInstallPrompt.userChoice;
+    deferredInstallPrompt = null;
+    els.installApp.classList.add("hidden");
+  });
+
   els.quickCaptureBtn.addEventListener("click", () => {
     els.quickCaptureText.value = "";
     els.quickCaptureDialog.showModal();
@@ -545,6 +596,53 @@ function bindEvents() {
     saveState();
     render();
     setView("notes");
+    showToast("Captured as a note");
+  });
+
+  els.exportData.addEventListener("click", () => {
+    const backup = {
+      app: "Second Brain Lite",
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      data: state,
+    };
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `second-brain-lite-backup-${todayISO}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+    showToast("Backup downloaded");
+  });
+
+  els.importData.addEventListener("change", async () => {
+    const file = els.importData.files?.[0];
+    if (!file) return;
+
+    try {
+      const parsed = JSON.parse(await file.text());
+      const incoming = parsed.data || parsed;
+      const required = ["notes", "reminders", "goals", "expenses", "events"];
+      if (!required.every((key) => Array.isArray(incoming[key]))) {
+        throw new Error("Backup is missing app data.");
+      }
+
+      state = {
+        notes: incoming.notes,
+        reminders: incoming.reminders,
+        goals: incoming.goals,
+        expenses: incoming.expenses,
+        events: incoming.events,
+      };
+      saveState();
+      render();
+      showToast("Backup restored");
+    } catch {
+      showToast("That backup file could not be imported.");
+    } finally {
+      els.importData.value = "";
+    }
   });
 
   els.resetData.addEventListener("click", () => {
@@ -553,6 +651,7 @@ function bindEvents() {
     state = structuredClone(defaultState);
     saveState();
     render();
+    showToast("Sample data restored");
   });
 
   els.generateSummary.addEventListener("click", renderDashboard);
@@ -568,6 +667,7 @@ function bindEvents() {
     els.noteForm.reset();
     saveState();
     render();
+    showToast("Note saved");
   });
 
   els.reminderForm.addEventListener("submit", (event) => {
@@ -584,6 +684,7 @@ function bindEvents() {
     els.reminderDate.value = todayISO;
     saveState();
     render();
+    showToast("Reminder added");
   });
 
   $$(".segment").forEach((button) => {
@@ -612,6 +713,7 @@ function bindEvents() {
     els.goalProgressValue.textContent = "0%";
     saveState();
     render();
+    showToast("Goal added");
   });
 
   els.expenseForm.addEventListener("submit", (event) => {
@@ -627,6 +729,7 @@ function bindEvents() {
     els.expenseDate.value = todayISO;
     saveState();
     render();
+    showToast("Expense added");
   });
 
   els.eventForm.addEventListener("submit", (event) => {
@@ -642,8 +745,16 @@ function bindEvents() {
     els.eventDate.value = todayISO;
     saveState();
     render();
+    showToast("Event added");
   });
 }
 
 bindEvents();
 render();
+updateSaveStatus();
+
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("service-worker.js").catch(() => {});
+  });
+}
