@@ -139,9 +139,8 @@ button {
 }
 
 .sidebar-footer {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
+  display: grid;
+  align-items: start;
   gap: 12px;
   margin-top: auto;
   padding-top: 20px;
@@ -150,6 +149,7 @@ button {
 }
 
 .sidebar-footer button,
+.footer-file,
 .ghost-btn,
 .icon-btn {
   border: 1px solid var(--line);
@@ -158,10 +158,33 @@ button {
   color: inherit;
 }
 
-.sidebar-footer button {
+.footer-actions {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.sidebar-footer button,
+.footer-file {
+  display: grid;
+  place-items: center;
+  min-height: 36px;
   padding: 8px 10px;
   border-color: rgba(255, 255, 255, 0.22);
   color: #fbfaf5;
+  font-weight: 800;
+}
+
+.footer-file {
+  cursor: pointer;
+}
+
+#importData {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
 }
 
 .main-content {
@@ -249,6 +272,10 @@ h2 {
 .ghost-btn {
   background: rgba(255, 255, 255, 0.62);
   color: var(--ink);
+}
+
+#installApp {
+  white-space: nowrap;
 }
 
 .view {
@@ -381,6 +408,16 @@ h2 {
   color: #3f433c;
   font-size: 0.8rem;
   font-weight: 800;
+}
+
+.badge.warning {
+  background: var(--coral-soft);
+  color: #8c3529;
+}
+
+.badge.good {
+  background: var(--green-soft);
+  color: #275c49;
 }
 
 .work-grid {
@@ -580,6 +617,21 @@ input[type="range"] {
   color: var(--ink);
 }
 
+.toast {
+  position: fixed;
+  right: 22px;
+  bottom: 22px;
+  z-index: 20;
+  max-width: min(360px, calc(100vw - 32px));
+  padding: 12px 14px;
+  border: 1px solid rgba(35, 37, 31, 0.14);
+  border-radius: 8px;
+  background: #23251f;
+  color: #ffffff;
+  box-shadow: var(--shadow);
+  font-weight: 800;
+}
+
 dialog {
   width: min(560px, calc(100vw - 28px));
   padding: 0;
@@ -642,7 +694,13 @@ dialog::backdrop {
   }
 
   .sidebar-footer {
-    display: none;
+    display: grid;
+    grid-template-columns: 1fr;
+    padding-top: 14px;
+  }
+
+  .footer-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   .main-content {
@@ -657,6 +715,11 @@ dialog::backdrop {
   .topbar-actions,
   .search-wrap {
     width: 100%;
+  }
+
+  .topbar-actions {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
   }
 
   .summary-grid,
@@ -680,15 +743,23 @@ dialog::backdrop {
   }
 
   .hero-band,
-  .topbar-actions,
   .field-row {
     align-items: stretch;
     flex-direction: column;
     grid-template-columns: 1fr;
   }
 
+  .topbar-actions {
+    grid-template-columns: 1fr;
+  }
+
   .hero-band {
     min-height: 230px;
+  }
+
+  .toast {
+    right: 16px;
+    bottom: 16px;
   }
 
   .bar-row {
