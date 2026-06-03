@@ -3,7 +3,12 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="theme-color" content="#31765b" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Second Brain Lite" />
     <title>Second Brain Lite</title>
+    <link rel="manifest" href="manifest.webmanifest" />
+    <link rel="icon" href="icon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
@@ -32,8 +37,13 @@
         </nav>
 
         <div class="sidebar-footer">
-          <span>Saved on this device</span>
-          <button id="resetData" type="button" title="Clear saved app data">Reset</button>
+          <span id="saveStatus">Saved on this device</span>
+          <div class="footer-actions">
+            <button id="exportData" type="button" title="Download a backup file">Export</button>
+            <label class="footer-file" for="importData" title="Restore a backup file">Import</label>
+            <input id="importData" type="file" accept="application/json" />
+            <button id="resetData" type="button" title="Clear saved app data">Reset</button>
+          </div>
         </div>
       </aside>
 
@@ -48,6 +58,7 @@
               <span aria-hidden="true">⌕</span>
               <input id="globalSearch" type="search" placeholder="Find anything" autocomplete="off" />
             </label>
+            <button id="installApp" class="ghost-btn hidden" type="button">Install</button>
             <button id="quickCaptureBtn" class="primary-btn" type="button">Quick Capture</button>
           </div>
         </header>
@@ -232,6 +243,8 @@
         <span>Add something small. Future you will appreciate it.</span>
       </div>
     </template>
+
+    <div id="toast" class="toast hidden" role="status" aria-live="polite"></div>
 
     <script src="app.js"></script>
   </body>
